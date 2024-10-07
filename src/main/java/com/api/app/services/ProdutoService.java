@@ -6,6 +6,8 @@ import jakarta.transaction.Transactional;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.Optional;
+import java.util.UUID;
 
 @Service
 public class ProdutoService {
@@ -21,6 +23,15 @@ public class ProdutoService {
 
     public List<ProdutoModel> findAll() {
             return produtoRepository.findAll();
+    }
+
+    public Optional<ProdutoModel> findById(UUID id) {
+            return produtoRepository.findById(id);
+    }
+
+    @Transactional
+    public void delete(UUID id) {
+            produtoRepository.deleteById(id);
     }
 
 }
