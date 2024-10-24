@@ -1,7 +1,9 @@
 package com.api.app.controllers;
 
 
+import com.api.app.models.LojaModel;
 import com.api.app.models.ProdutoModel;
+import com.api.app.services.LojaService;
 import com.api.app.services.ProdutoService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -13,42 +15,38 @@ import java.util.UUID;
 
 @RestController
 @CrossOrigin(origins = "*", maxAge = 3600)
-@RequestMapping("app")
-public class AppController {
+@RequestMapping("loja")
+public class LojaController {
 
-    final private ProdutoService produtoService;
-    public AppController(ProdutoService produtoService) {
-        this.produtoService = produtoService;
+    final private LojaService lojaService;
+
+    public LojaController(LojaService lojaService) {
+        this.lojaService = lojaService;
     }
 
-    @GetMapping("/minharota")
-    public String retornaTexto(){
-        return "MInha requisição deu certo";
-    }
-
-    @PostMapping("/salvar")
-    public ResponseEntity<Object> saveProduto
-            (@RequestBody ProdutoModel produtoModel){
+    @PostMapping("/salvarloja")
+    public ResponseEntity<Object> saveLoja
+            (@RequestBody LojaModel lojaModel){
         return ResponseEntity.ok().body(
-                produtoService.save(produtoModel));
+                lojaService.save(lojaModel));
     }
 
-    @GetMapping("/listar")
-    public ResponseEntity<List<ProdutoModel>> getAllProdutos(){
+    @GetMapping("/listarloja")
+    public ResponseEntity<List<LojaModel>> getAllLoja(){
         return ResponseEntity.ok().body(
-                produtoService.findAll());
+                lojaService.findAll());
     }
 
-    @PostMapping("/editar")
-    public ResponseEntity<Object> editarProduto(
-            @RequestBody ProdutoModel produtoModel)
+    @PostMapping("/editarloja")
+    public ResponseEntity<Object> editarLoja(
+            @RequestBody LojaModel lojaModel)
     {
         //buscar um ProdutoModel no servico pelo ID recebido
-        Optional<ProdutoModel> produtoModelOptional =
-             produtoService.findById(produtoModel.getId());
+        Optional<LojaModel> lojaModelOptional =
+                lojaService.findById(lojaModel.getId());
 
         // verifica se o produto foi encontrado no banco de dados
-        if(!produtoModelOptional.isPresent()){
+        if(!lojaModelOptional.isPresent()){
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(
                     "Produto não encontrado"
             );
@@ -56,29 +54,30 @@ public class AppController {
 
         //retorna objeto que foi editado
         return ResponseEntity.status(HttpStatus.OK).body(
-                produtoService.save(produtoModel)
+                lojaService.save(lojaModel)
         );
 
     }
 
-    @PostMapping("/delete/{id}")
+    @PostMapping("/deleteloja/{id}")
     public ResponseEntity<Object> apagarProduto(
             @PathVariable(value = "id") UUID id) {
-        Optional<ProdutoModel> produtoModelOptional =
-                produtoService.findById(id);
+        Optional<LojaModel> lojaModelOptional =
+                lojaService.findById(id);
 
         // verifica se o produto foi encontrado no banco de dados
-        if (!produtoModelOptional.isPresent()) {
+        if (!lojaModelOptional.isPresent()) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(
                     "Produto não encontrado"
             );
 
         }
         //se existir vai no service e chama para remover
-        produtoService.delete(id);
+        lojaService.delete(id);
         //retorna resposta de removido com sucesso
         return ResponseEntity.status(HttpStatus.OK).body(
                 "produto removido com sucesso"
         );
     }
+
 }
