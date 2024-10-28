@@ -1,5 +1,6 @@
 package com.api.app.controllers.dtos;
 
+import com.api.app.models.ProdutoModel;
 import jakarta.persistence.Column;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
@@ -10,6 +11,7 @@ import jakarta.validation.constraints.Positive;
 import jakarta.validation.constraints.Size;
 import lombok.Data;
 
+import java.util.List;
 import java.util.UUID;
 
 @Data
@@ -27,5 +29,11 @@ public class ProdutoDto
     @NotNull(message = "Preco obrigatorio")
     @Positive(message = "Valor positivo apenas")
     private Double preco;
+
+
+    @NotNull(message = "Id da loja obrigatorio")
+    private UUID lojaId;
+
+    private List<ProdutoModel> produtos;
 
 }

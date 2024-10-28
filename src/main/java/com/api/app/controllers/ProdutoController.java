@@ -4,6 +4,7 @@ package com.api.app.controllers;
 import com.api.app.controllers.dtos.ProdutoDto;
 import com.api.app.models.ProdutoModel;
 import com.api.app.services.ProdutoService;
+import jakarta.persistence.OneToMany;
 import jakarta.validation.Valid;
 import org.springframework.beans.BeanUtils;
 import org.springframework.http.HttpStatus;
@@ -30,8 +31,8 @@ public class ProdutoController {
     }
 
     @PostMapping("/salvar")
-    public ResponseEntity<Object> saveProduto
-            (@RequestBody @Valid ProdutoDto produtoDto){
+    public ResponseEntity<Object> saveProduto(@RequestBody @Valid ProdutoDto produtoDto)
+    {
         var produtoModel = new ProdutoModel();
         BeanUtils.copyProperties(produtoDto, produtoModel);
         return ResponseEntity.ok().body(
@@ -45,26 +46,18 @@ public class ProdutoController {
     }
 
     @PostMapping("/editar")
-    public ResponseEntity<Object> editarProduto(
-            @RequestBody ProdutoModel produtoModel)
+    public ResponseEntity<Object> editarProduto(@RequestBody @Valid ProdutoDto produtoDto)
     {
-        //buscar um ProdutoModel no servico pelo ID recebido
-        Optional<ProdutoModel> produtoModelOptional =
-             produtoService.findById(produtoModel.getId());
+        Optional<ProdutoModel> produtoModelOptional = produtoService.findById(produtoDto.getId());
 
-        // verifica se o produto foi encontrado no banco de dados
-        if(!produtoModelOptional.isPresent()){
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(
-                    "Produto não encontrado"
-            );
+        if (!produtoModelOptional.isPresent()) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Produto não encontrado");
         }
-
-        //retorna objeto que foi editado
-        return ResponseEntity.status(HttpStatus.OK).body(
-                produtoService.save(produtoModel)
-        );
-
+        var produtoModel = produtoModelOptional.get();
+        BeanUtils.copyProperties(produtoDto, produtoModel);
+        return ResponseEntity.ok().body(produtoService.save(produtoModel));
     }
+
 
     @PostMapping("/delete/{id}")
     public ResponseEntity<Object> apagarProduto(
@@ -86,4 +79,7 @@ public class ProdutoController {
                 "produto removido com sucesso"
         );
     }
+
+
+
 }

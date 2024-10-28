@@ -1,9 +1,12 @@
 package com.api.app.models;
 
+import com.fasterxml.jackson.annotation.JsonManagedReference;
 import jakarta.persistence.*;
 import lombok.Data;
 
 import java.io.Serializable;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.UUID;
 
 @Entity
@@ -22,6 +25,11 @@ public class LojaModel implements Serializable {
 
         @Column(nullable = false)
         private String razaosocial;
+
+        @OneToMany(mappedBy = "lojaModel", cascade = CascadeType.ALL)
+        @JsonManagedReference
+        private List<ProdutoModel> produtos = new ArrayList<>();
+
 
 }
 

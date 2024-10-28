@@ -2,16 +2,26 @@ package com.api.app.controllers;
 
 
 import com.api.app.models.LojaModel;
-import com.api.app.models.ProdutoModel;
+
 import com.api.app.services.LojaService;
-import com.api.app.services.ProdutoService;
+
+import jakarta.validation.Valid;
+import org.springframework.beans.BeanUtils;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+
+import org.springframework.validation.BindingResult;
+
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.servlet.View;
+
 
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.stream.Collectors;
+
+
 
 @RestController
 @CrossOrigin(origins = "*", maxAge = 3600)
@@ -19,17 +29,33 @@ import java.util.UUID;
 public class LojaController {
 
     final private LojaService lojaService;
+    private final View error;
 
-    public LojaController(LojaService lojaService) {
+    public LojaController(LojaService lojaService, View error) {
         this.lojaService = lojaService;
+        this.error = error;
     }
 
     @PostMapping("/salvarloja")
     public ResponseEntity<Object> saveLoja
-            (@RequestBody LojaModel lojaModel){
+            (@RequestBody @Valid com.api.app.dtos.LojaDto lojaDto, BindingResult result){
+        //retorna lista de erros na validacao do dto
+        if (result.hasErrors()) {
+
+            List<String> messagemdeErrors = result.getAllErrors()
+            .stream()
+            .map(error -> error.getDefaultMessage())
+                    .collect(Collectors.toList());
+
+            return ResponseEntity.badRequest().body(messagemdeErrors);
+        }
+
+        var lojaModel = new LojaModel();
+        BeanUtils.copyProperties(lojaDto, lojaModel);
         return ResponseEntity.ok().body(
                 lojaService.save(lojaModel));
     }
+
 
     @GetMapping("/listarloja")
     public ResponseEntity<List<LojaModel>> getAllLoja(){

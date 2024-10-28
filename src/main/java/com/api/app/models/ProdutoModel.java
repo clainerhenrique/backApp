@@ -1,11 +1,13 @@
 package com.api.app.models;
 
 
+import com.fasterxml.jackson.annotation.JsonBackReference;
 import jakarta.persistence.*;
 import lombok.Data;
 
 import java.io.Serial;
 import java.io.Serializable;
+import java.util.List;
 import java.util.UUID;
 
 @Entity
@@ -27,5 +29,10 @@ public class ProdutoModel implements Serializable {
 
     @Column(nullable = false)
     private Double preco;
+
+    @ManyToOne
+    @JoinColumn(name = "loja_id")
+    @JsonBackReference
+    private LojaModel lojaModel;
 
 }
