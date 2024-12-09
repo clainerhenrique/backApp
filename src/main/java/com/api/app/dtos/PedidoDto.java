@@ -6,33 +6,25 @@ import jakarta.validation.constraints.Positive;
 import jakarta.validation.constraints.Size;
 import lombok.Data;
 
+import java.math.BigDecimal;
 import java.util.UUID;
 
 @Data
-public class ProdutoDto {
+public class PedidoDto {
 
     private UUID id;
 
     @NotBlank
-    @Size(min = 2, max = 50, message = "Nome deve ter entre 2 e 50 caracteres")
-    private String nome;
-
-    @NotBlank
+    @Size(min = 2, max = 50, message = "A descrição deve ter entre 2 e 50 caracteres.")
     private String descricao;
 
-    @NotNull(message = "Preço é obrigatório")
-    @Positive(message = "Preço deve ser positivo")
-    private Double preco;
+    @NotNull(message = "O valor do pedido não pode ser nulo.")
+    @Positive(message = "O valor deve ser positivo.")
+    private BigDecimal valor;
 
-    private UUID lojaId; // Aqui está o campo lojaId
+    @NotBlank(message = "O status é obrigatório.")
+    private String status = "Pendente";  // Valor padrão para o status
 
-    // Getter para lojaId
-    public UUID getLojaId() {
-        return lojaId;
-    }
-
-    // Setter para lojaId
-    public void setLojaId(UUID lojaId) {
-        this.lojaId = lojaId;
-    }
+    @NotNull(message = "O ID do cliente é obrigatório.")
+    private UUID clienteId;
 }

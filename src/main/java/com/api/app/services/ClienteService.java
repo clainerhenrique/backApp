@@ -1,8 +1,8 @@
 package com.api.app.services;
 
-import com.api.app.models.LojaModel;
-import com.api.app.models.ProdutoModel;
-import com.api.app.repositories.LojaRepository;
+import com.api.app.models.ClienteModel;
+import com.api.app.models.PedidoModel;
+import com.api.app.repositories.ClienteRepository;
 import jakarta.transaction.Transactional;
 import org.springframework.stereotype.Service;
 
@@ -11,35 +11,33 @@ import java.util.Optional;
 import java.util.UUID;
 
 @Service
-public class LojaService {
+public class ClienteService {
 
-    final LojaRepository lojaRepository;
-    public LojaService(LojaRepository lojaRepository) {
-        this.lojaRepository = lojaRepository;
+    final ClienteRepository clienteRepository;
+
+    public ClienteService(ClienteRepository clienteRepository) {
+        this.clienteRepository = clienteRepository;
     }
 
     @Transactional
-    public LojaModel save(LojaModel lojaModel) {
-
-        //associar cada produto a loja
-        for (ProdutoModel produto: lojaModel.getProdutos()) {
-            //Associa o produto
-            produto.setLojaModel(lojaModel);
+    public ClienteModel save(ClienteModel clienteModel) {
+        // Associar cada pedido ao cliente
+        for (PedidoModel pedido : clienteModel.getPedidos()) {
+            pedido.setCliente(clienteModel);
         }
-        return lojaRepository.save(lojaModel);
+        return clienteRepository.save(clienteModel);
     }
 
-    public List<LojaModel> findAll() {
-        return lojaRepository.findAll();
+    public List<ClienteModel> findAll() {
+        return clienteRepository.findAll();
     }
 
-    public Optional<LojaModel> findById(UUID id) {
-        return lojaRepository.findById(id);
+    public Optional<ClienteModel> findById(UUID id) {
+        return clienteRepository.findById(id);
     }
 
     @Transactional
     public void delete(UUID id) {
-        lojaRepository.deleteById(id);
+        clienteRepository.deleteById(id);
     }
-
 }

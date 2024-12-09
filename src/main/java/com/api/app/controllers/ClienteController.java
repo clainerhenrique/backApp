@@ -1,141 +1,111 @@
 package com.api.app.controllers;
 
-
-import com.api.app.models.LojaModel;
-
-import com.api.app.models.ProdutoModel;
-import com.api.app.services.LojaService;
-
+import com.api.app.dtos.ClienteDto;
+import com.api.app.models.ClienteModel;
+import com.api.app.models.PedidoModel;
+import com.api.app.services.ClienteService;
 import jakarta.validation.Valid;
 import org.springframework.beans.BeanUtils;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-
 import org.springframework.validation.BindingResult;
-
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.servlet.View;
-
 
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
-import  com.api.app.dtos.LojaDto;
-
 @RestController
 @CrossOrigin(origins = "*", maxAge = 3600)
-@RequestMapping("loja")
-public class LojaController {
+@RequestMapping("/clientes")
+public class ClienteController {
 
-    final private LojaService lojaService;
-    private final View error;
+    private final ClienteService clienteService;
 
-    public LojaController(LojaService lojaService, View error) {
-        this.lojaService = lojaService;
-        this.error = error;
+    public ClienteController(ClienteService clienteService) {
+        this.clienteService = clienteService;
     }
 
-    @PostMapping("/salvarloja")
-    public ResponseEntity<Object> saveLoja(@RequestBody @Valid LojaDto lojaDto, BindingResult result) {
-        // Verifica os erros de validação
+    @PostMapping("/salvar")
+    public ResponseEntity<Object> salvarCliente(@RequestBody @Valid ClienteDto clienteDto, BindingResult result) {
+        // Verifica erros de validação
         if (result.hasErrors()) {
-            List<String> messagemdeErrors = result.getAllErrors()
+            List<String> mensagensDeErro = result.getAllErrors()
                     .stream()
                     .map(error -> error.getDefaultMessage())
                     .collect(Collectors.toList());
-            return ResponseEntity.badRequest().body(messagemdeErrors);
+            return ResponseEntity.badRequest().body(mensagensDeErro);
         }
 
-        // Converte LojaDto para LojaModel
-        var lojaModel = new LojaModel();
-        BeanUtils.copyProperties(lojaDto, lojaModel);
+        // Converte ClienteDto para ClienteModel
+        var clienteModel = new ClienteModel();
+        BeanUtils.copyProperties(clienteDto, clienteModel);
 
-        // Converte cada ProdutoDto para ProdutoModel e associa com LojaModel
-        List<ProdutoModel> produtos = lojaDto.getProdutos().stream().map(produtoDto -> {
-            ProdutoModel produtoModel = new ProdutoModel();
-            BeanUtils.copyProperties(produtoDto, produtoModel);
-            produtoModel.setLojaModel(lojaModel);  // Associa cada produto à loja
-            return produtoModel;
+        // Associa os pedidos ao cliente
+        List<PedidoModel> pedidos = clienteDto.getPedidos().stream().map(pedidoDto -> {
+            PedidoModel pedidoModel = new PedidoModel();
+            BeanUtils.copyProperties(pedidoDto, pedidoModel);
+            pedidoModel.setCliente(clienteModel); // Vincula o cliente ao pedido
+            return pedidoModel;
         }).collect(Collectors.toList());
 
-        lojaModel.setProdutos(produtos); // Define a lista de produtos no LojaModel
+        clienteModel.setPedidos(pedidos);
 
-        // Salva a loja e produtos associados no banco de dados
-        return ResponseEntity.ok().body(lojaService.save(lojaModel));
+        // Salva o cliente com os pedidos associados
+        return ResponseEntity.status(HttpStatus.CREATED).body(clienteService.save(clienteModel));
     }
 
-
-
-
-    @GetMapping("/listarloja")
-    public ResponseEntity<List<LojaModel>> getAllLoja(){
-        return ResponseEntity.ok().body(
-                lojaService.findAll());
+    @GetMapping("/listar")
+    public ResponseEntity<List<ClienteModel>> listarClientes() {
+        return ResponseEntity.ok(clienteService.findAll());
     }
 
-    @PostMapping("/editarloja")
-    public ResponseEntity<Object> editarLoja(@RequestBody LojaModel lojaModel) {
-        // Buscar a loja pelo ID recebido
-        Optional<LojaModel> lojaModelOptional = lojaService.findById(lojaModel.getId());
+    @PutMapping("/editar/{id}")
+    public ResponseEntity<Object> editarCliente(@PathVariable UUID id, @RequestBody @Valid ClienteDto clienteDto) {
+        Optional<ClienteModel> clienteOptional = clienteService.findById(id);
 
-        // Verifica se a loja foi encontrada no banco de dados
-        if (!lojaModelOptional.isPresent()) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Loja não encontrada");
+        if (!clienteOptional.isPresent()) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Cliente não encontrado.");
         }
 
-        // Se a loja for encontrada, vamos atualizar os dados da loja
-        LojaModel lojaExistente = lojaModelOptional.get();
+        // Atualiza os dados do cliente
+        var clienteModel = clienteOptional.get();
+        BeanUtils.copyProperties(clienteDto, clienteModel, "id");
 
-        // Atualiza os dados da loja, incluindo a lista de produtos
-        lojaExistente.setCnpj(lojaModel.getCnpj());
-        lojaExistente.setRazaosocial(lojaModel.getRazaosocial());
-        lojaExistente.setProdutos(lojaModel.getProdutos());  // Atualiza a lista de produtos
+        // Atualiza os pedidos do cliente, se existirem no DTO
+        List<PedidoModel> pedidos = clienteDto.getPedidos().stream().map(pedidoDto -> {
+            PedidoModel pedidoModel = new PedidoModel();
+            BeanUtils.copyProperties(pedidoDto, pedidoModel);
+            pedidoModel.setCliente(clienteModel);
+            return pedidoModel;
+        }).collect(Collectors.toList());
 
-        // Salva a loja com a lista atualizada de produtos
-        lojaService.save(lojaExistente);
+        clienteModel.setPedidos(pedidos);
 
-        // Retorna a loja atualizada com sucesso
-        return ResponseEntity.ok().body(lojaExistente);
+        return ResponseEntity.ok(clienteService.save(clienteModel));
     }
 
-    @GetMapping("/buscarlojaid/{id}")
-    public ResponseEntity<Object> getLojaById(@PathVariable UUID id) {
-        // Tenta buscar a loja no banco de dados usando o ID
-        Optional<LojaModel> lojaModelOptional = lojaService.findById(id);
+    @GetMapping("/buscar/{id}")
+    public ResponseEntity<Object> buscarClientePorId(@PathVariable UUID id) {
+        Optional<ClienteModel> clienteOptional = clienteService.findById(id);
 
-        // Verifica se a loja foi encontrada
-        if (!lojaModelOptional.isPresent()) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Loja não encontrada");
+        if (!clienteOptional.isPresent()) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Cliente não encontrado.");
         }
 
-        // Se a loja for encontrada, retorna os dados da loja
-        return ResponseEntity.ok().body(lojaModelOptional.get());
+        return ResponseEntity.ok(clienteOptional.get());
     }
 
+    @DeleteMapping("/deletar/{id}")
+    public ResponseEntity<Object> deletarCliente(@PathVariable UUID id) {
+        Optional<ClienteModel> clienteOptional = clienteService.findById(id);
 
-
-
-    @PostMapping("/deleteloja/{id}")
-    public ResponseEntity<Object> apagarProduto(
-            @PathVariable(value = "id") UUID id) {
-        Optional<LojaModel> lojaModelOptional =
-                lojaService.findById(id);
-
-        // verifica se o produto foi encontrado no banco de dados
-        if (!lojaModelOptional.isPresent()) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(
-                    "Produto não encontrado"
-            );
-
+        if (!clienteOptional.isPresent()) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Cliente não encontrado.");
         }
-        //se existir vai no service e chama para remover
-        lojaService.delete(id);
-        //retorna resposta de removido com sucesso
-        return ResponseEntity.status(HttpStatus.OK).body(
-                "produto removido com sucesso"
-        );
-    }
 
+        clienteService.delete(id);
+        return ResponseEntity.status(HttpStatus.OK).body("Cliente removido com sucesso.");
+    }
 }

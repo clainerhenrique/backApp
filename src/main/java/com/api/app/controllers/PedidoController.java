@@ -1,10 +1,10 @@
 package com.api.app.controllers;
 
-import com.api.app.dtos.ProdutoDto;
-import com.api.app.models.ProdutoModel;
-import com.api.app.models.LojaModel;
-import com.api.app.services.ProdutoService;
-import com.api.app.services.LojaService;
+import com.api.app.dtos.PedidoDto;
+import com.api.app.models.PedidoModel;
+import com.api.app.models.ClienteModel;
+import com.api.app.services.PedidoService;
+import com.api.app.services.ClienteService;
 import jakarta.validation.Valid;
 import org.springframework.beans.BeanUtils;
 import org.springframework.http.HttpStatus;
@@ -19,81 +19,83 @@ import java.util.stream.Collectors;
 
 @RestController
 @CrossOrigin(origins = "*", maxAge = 3600)
-@RequestMapping("produto")
-public class ProdutoController {
+@RequestMapping("/pedidos")
+public class PedidoController {
 
-    private final ProdutoService produtoService;
-    private final LojaService lojaService;  // Adicionado LojaService para acessar as lojas
+    private final PedidoService pedidoService;
+    private final ClienteService clienteService;
 
-    public ProdutoController(ProdutoService produtoService, LojaService lojaService) {
-        this.produtoService = produtoService;
-        this.lojaService = lojaService;  // Inicializa o LojaService
+    public PedidoController(PedidoService pedidoService, ClienteService clienteService) {
+        this.pedidoService = pedidoService;
+        this.clienteService = clienteService;
     }
 
-    @GetMapping("/minharota")
+    @GetMapping("/status")
     public String retornaTexto() {
-        return "Minha requisição deu certo";
+        return "Requisição realizada com sucesso!";
     }
 
     @PostMapping("/salvar")
-    public ResponseEntity<Object> saveProduto(@RequestBody @Valid ProdutoDto produtoDto, BindingResult result) {
+    public ResponseEntity<Object> salvarPedido(@RequestBody @Valid PedidoDto pedidoDto, BindingResult result) {
         // Verifica se há erros de validação
         if (result.hasErrors()) {
             List<String> errors = result.getAllErrors()
                     .stream()
                     .map(error -> error.getDefaultMessage())
                     .collect(Collectors.toList());
-            return ResponseEntity.badRequest().body(errors); // Retorna erro 400 com mensagens
+            return ResponseEntity.badRequest().body(errors);
         }
 
-        // Busca a loja pelo ID recebido
-        Optional<LojaModel> lojaOptional = lojaService.findById(produtoDto.getLojaId());
-        if (!lojaOptional.isPresent()) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Loja não encontrada.");
+        // Busca o cliente pelo ID recebido
+        Optional<ClienteModel> clienteOptional = clienteService.findById(pedidoDto.getClienteId());
+        if (!clienteOptional.isPresent()) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Cliente não encontrado.");
         }
 
-        // Cria o ProdutoModel e copia as propriedades do ProdutoDto
-        var produtoModel = new ProdutoModel();
-        BeanUtils.copyProperties(produtoDto, produtoModel);
+        // Cria o PedidoModel e copia as propriedades do PedidoDto
+        var pedidoModel = new PedidoModel();
+        BeanUtils.copyProperties(pedidoDto, pedidoModel);
 
-        // Associa a loja ao produto
-        produtoModel.setLojaModel(lojaOptional.get());
+        // Associa o cliente ao pedido
+        pedidoModel.setCliente(clienteOptional.get());
 
-        // Salva o produto
-        ProdutoModel produtoSalvo = produtoService.save(produtoModel);
+        // Salva o pedido
+        PedidoModel pedidoSalvo = pedidoService.save(pedidoModel);
 
-        // Adiciona o produto na lista de produtos da loja (opcional)
-        lojaOptional.get().getProdutos().add(produtoSalvo);
-        lojaService.save(lojaOptional.get());  // Atualiza a loja com o novo produto
-
-        return ResponseEntity.ok().body(produtoSalvo); // Retorna o produto salvo
+        return ResponseEntity.status(HttpStatus.CREATED).body(pedidoSalvo);
     }
 
     @GetMapping("/listar")
-    public ResponseEntity<List<ProdutoModel>> getAllProdutos() {
-        return ResponseEntity.ok().body(produtoService.findAll());
+    public ResponseEntity<List<PedidoModel>> listarPedidos() {
+        return ResponseEntity.ok().body(pedidoService.findAll());
     }
 
-    @PostMapping("/editar")
-    public ResponseEntity<Object> editarProduto(@RequestBody @Valid ProdutoDto produtoDto) {
-        Optional<ProdutoModel> produtoModelOptional = produtoService.findById(produtoDto.getId());
+    @PutMapping("/editar/{id}")
+    public ResponseEntity<Object> editarPedido(@PathVariable UUID id, @RequestBody @Valid PedidoDto pedidoDto) {
+        Optional<PedidoModel> pedidoModelOptional = pedidoService.findById(id);
 
-        if (!produtoModelOptional.isPresent()) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Produto não encontrado");
+        if (!pedidoModelOptional.isPresent()) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Pedido não encontrado.");
         }
-        var produtoModel = produtoModelOptional.get();
-        BeanUtils.copyProperties(produtoDto, produtoModel);
-        return ResponseEntity.ok().body(produtoService.save(produtoModel));
+
+        // Atualiza os dados do pedido
+        var pedidoModel = pedidoModelOptional.get();
+        BeanUtils.copyProperties(pedidoDto, pedidoModel, "id");
+        pedidoModel.setCliente(clienteService.findById(pedidoDto.getClienteId())
+                .orElseThrow(() -> new RuntimeException("Cliente não encontrado.")));
+
+        return ResponseEntity.ok().body(pedidoService.save(pedidoModel));
     }
 
-    @PostMapping("/delete/{id}")
-    public ResponseEntity<Object> apagarProduto(@PathVariable(value = "id") UUID id) {
-        Optional<ProdutoModel> produtoModelOptional = produtoService.findById(id);
+    @DeleteMapping("/deletar/{id}")
+    public ResponseEntity<Object> deletarPedido(@PathVariable UUID id) {
+        Optional<PedidoModel> pedidoModelOptional = pedidoService.findById(id);
 
-        if (!produtoModelOptional.isPresent()) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Produto não encontrado");
+        if (!pedidoModelOptional.isPresent()) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Pedido não encontrado.");
         }
-        produtoService.delete(id);
-        return ResponseEntity.status(HttpStatus.OK).body("Produto removido com sucesso");
+
+        pedidoService.delete(id);
+        return ResponseEntity.status(HttpStatus.OK).body("Pedido removido com sucesso.");
     }
 }

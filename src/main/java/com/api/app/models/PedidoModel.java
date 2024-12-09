@@ -1,19 +1,18 @@
 package com.api.app.models;
 
-
 import com.fasterxml.jackson.annotation.JsonBackReference;
 import jakarta.persistence.*;
+import jakarta.validation.constraints.NotNull;
 import lombok.Data;
 
-import java.io.Serial;
 import java.io.Serializable;
-import java.util.List;
+import java.math.BigDecimal;
 import java.util.UUID;
 
 @Entity
-@Table(name = "TB_PRODUTO")
+@Table(name = "TB_PEDIDO")
 @Data
-public class ProdutoModel implements Serializable {
+public class PedidoModel implements Serializable {
 
     private static final long serialVersionUID = 1L;
 
@@ -22,17 +21,17 @@ public class ProdutoModel implements Serializable {
     private UUID id;
 
     @Column(nullable = false)
-    private String nome;
-
-    @Column(nullable = false)
     private String descricao;
 
     @Column(nullable = false)
-    private Double preco;
+    @NotNull(message = "O valor do pedido não pode ser nulo.")
+    private BigDecimal valor;
+
+    @Column(nullable = false)
+    private String status;
 
     @ManyToOne
-    @JoinColumn(name = "loja_id")
-    @JsonBackReference
-    private LojaModel lojaModel;
-
+    @JoinColumn(name = "cliente_id", nullable = false)  // Relacionamento com ClienteModel
+    @JsonBackReference  // Garante que a serialização de pedidos não cause loop com clientes
+    private ClienteModel cliente;
 }

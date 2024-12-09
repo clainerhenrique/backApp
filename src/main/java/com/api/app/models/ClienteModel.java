@@ -10,9 +10,9 @@ import java.util.List;
 import java.util.UUID;
 
 @Entity
-@Table(name = "TB_LOJA")
+@Table(name = "TB_CLIENTE")
 @Data
-public class LojaModel implements Serializable {
+public class ClienteModel implements Serializable {
 
         private static final long serialVersionUID = 1L;
 
@@ -21,16 +21,18 @@ public class LojaModel implements Serializable {
         private UUID id;
 
         @Column(nullable = false)
-        private String cnpj;
+        private String nome;
 
-        @Column(nullable = false)
-        private String razaosocial;
+        @Column(nullable = false, unique = true)
+        private String cpf;
 
-        @OneToMany(mappedBy = "lojaModel", cascade = CascadeType.ALL)
+        @Column(nullable = false) // Adicionado como obrigatório
+        private String telefone;
+
+        @Column(nullable = false) // Adicionado como obrigatório
+        private String endereco;
+
+        @OneToMany(mappedBy = "cliente", cascade = CascadeType.ALL)
         @JsonManagedReference
-        private List<ProdutoModel> produtos = new ArrayList<>();
-
-
+        private List<PedidoModel> pedidos = new ArrayList<>();
 }
-
-

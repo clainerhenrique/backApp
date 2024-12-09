@@ -2,21 +2,28 @@ package com.api.app.dtos;
 
 import jakarta.validation.constraints.NotBlank;
 import lombok.Data;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
 @Data
-public class LojaDto {
+public class ClienteDto {
 
     private UUID id;
 
-    @NotBlank(message = "Razão Social é obrigatória")
-    private String razaosocial;
+    @NotBlank(message = "O nome é obrigatório.")
+    private String nome;
 
-    @NotBlank(message = "CNPJ é obrigatório")
-    private String cnpj;
+    @NotBlank(message = "O CPF é obrigatório.")
+    private String cpf;
 
-    // Lista de produtos
-    private List<ProdutoDto> produtos = new ArrayList<>();
+    @NotBlank(message = "O telefone é obrigatório.")
+    private String telefone;
+
+    @NotBlank(message = "O endereço é obrigatório.")
+    private String endereco;
+
+    // Reintroduzido para gerenciar os pedidos no DTO
+    private List<PedidoDto> pedidos = new ArrayList<>();
 }
